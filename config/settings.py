@@ -59,6 +59,20 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {"class": "logging.StreamHandler"},
+    },
+    "loggers": {
+        "planner": {
+            "handlers": ["console"],
+            "level": "INFO",
+        },
+    },
+}
+
 FUEL_PRICE_CSV = BASE_DIR / "data" / "fuel_prices.csv"
 OSRM_BASE_URL = os.environ.get("OSRM_BASE_URL", "https://router.project-osrm.org")
 NOMINATIM_BASE_URL = os.environ.get(

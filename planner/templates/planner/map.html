@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ plan.start.query }} to {{ plan.finish.query }}</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <style>
+    html, body { height: 100%; margin: 0; }
+    body {
+      display: flex;
+      color: #1c1915;
+      font-family: "Segoe UI", sans-serif;
+    }
+    aside {
+      width: 340px;
+      box-sizing: border-box;
+      padding: 20px 18px 28px;
+      overflow: auto;
+      background: #f7f4ef;
+      border-right: 1px solid #e2d9cc;
+    }
+    h1 { margin: 0 0 6px; font-size: 20px; line-height: 1.3; }
+    .meta { margin: 0 0 14px; color: #5c564e; }
+    .total { margin: 0 0 16px; font-size: 22px; }
+    ol { margin: 0; padding: 0 0 0 18px; }
+    li { margin: 0 0 12px; }
+    li span { display: block; color: #5c564e; font-size: 14px; }
+    #map { flex: 1; min-height: 320px; }
+    @media (max-width: 800px) {
+      body { display: block; }
+      aside { width: auto; border-right: 0; border-bottom: 1px solid #e2d9cc; }
+      #map { height: 70vh; }
+    }
+  </style>
+</head>
+<body>
+  <aside>
+    <h1>{{ plan.start.query }} to {{ plan.finish.query }}</h1>
+    <p class="meta">{{ plan.route.distance_miles }} miles · {{ plan.route.duration_minutes }} min</p>
+    <p class="total">${{ plan.total_fuel_cost|floatformat:2 }}</p>
+    <ol>
+      {% for stop in plan.fuel_stops %}
+        <li>
+          <strong>{{ stop.name }}</strong>
+          <span>{{ stop.city }}, {{ stop.state }} · mile {{ stop.mile_along_route }}</span>
+          <span>${{ stop.price_per_gallon|floatformat:3 }}/gal · {{ stop.gallons }} gal · ${{ stop.cost|floatformat:2 }}</span>
+        </li>
+      {% empty %}
+        <li>The starting tank covers this trip.</li>
+      {% endfor %}
+    </ol>
+  </aside>
+  <div id="map"></div>
+  {{ plan|json_script:"plan-data" }}
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    const plan = JSON.parse(document.getElementById("plan-data").textContent);
+    const map = L.map("map");
+    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 16,
+      attribution: "&copy; OpenStreetMap"
+    }).addTo(map);
+
+    const line = plan.route.geometry.coordinates.map(function (pair) {
+      return [pair[1], pair[0]];
+    });
+    const route = L.polyline(line, { color: "#1f4e79", weight: 5, opacity: 0.9 }).addTo(map);
+    function frameRoute() {
+      if (line.length > 1) {
+        map.fitBounds(route.getBounds(), { padding: [28, 28] });
+      } else if (line.length === 1) {
+        map.setView(line[0], 12);
+      }
+    }
+    frameRoute();
+    window.addEventListener("resize", function () {
+      map.invalidateSize();
+      frameRoute();
+    });
+
+    function pin(latitude, longitude, color, title, lines) {
+      const marker = L.circleMarker([latitude, longitude], {
+        radius: 7,
+        color: "#ffffff",
+        weight: 2,
+        fillColor: color,
+        fillOpacity: 1
+      }).addTo(map);
+      const node = document.createElement("div");
+      const heading = document.createElement("strong");
+      heading.textContent = title;
+      node.appendChild(heading);
+      lines.forEach(function (line) {
+        node.appendChild(document.createElement("br"));
+        node.appendChild(document.createTextNode(line));
+      });
+      marker.bindPopup(node);
+      return marker;
+    }
+
+    pin(plan.start.latitude, plan.start.longitude, "#1b7f4e", "Start", [plan.start.label]);
+    pin(plan.finish.latitude, plan.finish.longitude, "#8c2f39", "Finish", [plan.finish.label]);
+    plan.fuel_stops.forEach(function (stop, index) {
+      pin(stop.latitude, stop.longitude, "#c47b16", (index + 1) + ". " + stop.name, [
+        stop.city + ", " + stop.state,
+        "$" + stop.price_per_gallon.toFixed(3) + " / gal",
+        stop.gallons.toFixed(2) + " gal · $" + stop.cost.toFixed(2),
+        "Mile " + stop.mile_along_route
+      ]);
+    });
+  </script>
+</body>
+</html>
