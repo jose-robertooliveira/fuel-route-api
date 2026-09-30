@@ -1,0 +1,49 @@
+{
+  "info": {
+    "name": "Fuel route",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "url": "http://127.0.0.1:8000/api/v1/health/"
+      }
+    },
+    {
+      "name": "Dallas to Atlanta",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"start\": \"Dallas, TX\",\n  \"finish\": \"Atlanta, GA\"\n}"
+        },
+        "url": "http://127.0.0.1:8000/api/v1/route/"
+      }
+    },
+    {
+      "name": "New York to Los Angeles",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"start\": \"New York, NY\",\n  \"finish\": \"Los Angeles, CA\"\n}"
+        },
+        "url": "http://127.0.0.1:8000/api/v1/route/"
+      }
+    }
+  ]
+}
